@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Horarios Universitarios</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Asistente de Horarios Universitarios</h1>
+            <p>Sistema inteligente de recomendaciones de horarios</p>
+        </div>
+    </header>
+
+    <main>
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="courses">Materias</button>
+            <button class="tab-btn" data-tab="recommend">Recomendaciones</button>
+            <button class="tab-btn" data-tab="schedules">Mis Horarios</button>
+        </nav>
+
+        <!-- Courses Tab -->
+        <section id="tab-courses" class="tab-content active">
+            <div class="card">
+                <h2>Agregar Materia</h2>
+                <form id="course-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="course-name">Nombre de la materia *</label>
+                            <input type="text" id="course-name" placeholder="Ej: Cálculo I" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="course-code">Código</label>
+                            <input type="text" id="course-code" placeholder="Ej: MAT101">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="course-professor">Profesor</label>
+                            <input type="text" id="course-professor" placeholder="Ej: Dr. García">
+                        </div>
+                        <div class="form-group">
+                            <label for="course-credits">Créditos</label>
+                            <input type="number" id="course-credits" value="3" min="1" max="10">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar Materia</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Materias Registradas</h2>
+                <div id="courses-list" class="items-list">
+                    <p class="empty-msg">No hay materias registradas aún.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommend Tab -->
+        <section id="tab-recommend" class="tab-content">
+            <div class="card">
+                <h2>Generar Recomendaciones</h2>
+                <p class="subtitle">Selecciona las materias que deseas cursar y tus preferencias de horario.</p>
+
+                <div class="form-group">
+                    <label>Materias a cursar</label>
+                    <div id="recommend-courses" class="checkbox-list">
+                        <p class="empty-msg">Primero agrega materias en la pestaña "Materias".</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Preferencias de horario</label>
+                    <div class="preferences">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="pref-avoid-early">
+                            Evitar clases muy temprano (antes de 8am)
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="pref-avoid-late">
+                            Evitar clases muy tarde (después de 7pm)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Días preferidos</label>
+                    <div class="days-selector">
+                        <label class="day-chip"><input type="checkbox" value="Lunes"> Lunes</label>
+                        <label class="day-chip"><input type="checkbox" value="Martes"> Martes</label>
+                        <label class="day-chip"><input type="checkbox" value="Miércoles"> Miércoles</label>
+                        <label class="day-chip"><input type="checkbox" value="Jueves"> Jueves</label>
+                        <label class="day-chip"><input type="checkbox" value="Viernes"> Viernes</label>
+                    </div>
+                </div>
+
+                <button id="btn-recommend" class="btn btn-primary">Generar Recomendaciones</button>
+            </div>
+
+            <div id="recommendations-result" class="card hidden">
+                <h2>Resultado</h2>
+                <div id="recommendations-content"></div>
+            </div>
+        </section>
+
+        <!-- Schedules Tab -->
+        <section id="tab-schedules" class="tab-content">
+            <div class="card">
+                <h2>Crear Horario</h2>
+                <form id="schedule-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="schedule-name">Nombre del horario *</label>
+                            <input type="text" id="schedule-name" placeholder="Ej: Horario Semestre 2026-1" required>
+                        </div>
+                    </div>
+
+                    <div id="schedule-items-container">
+                        <div class="schedule-item-entry" id="item-template-wrapper">
+                            <h4>Bloque de clase</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Materia</label>
+                                    <select class="item-course"></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Día</label>
+                                    <select class="item-day">
+                                        <option>Lunes</option>
+                                        <option>Martes</option>
+                                        <option>Miércoles</option>
+                                        <option>Jueves</option>
+                                        <option>Viernes</option>
+                                        <option>Sábado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Hora inicio</label>
+                                    <input type="time" class="item-start" value="08:00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Hora fin</label>
+                                    <input type="time" class="item-end" value="10:00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Salón</label>
+                                    <input type="text" class="item-location" placeholder="Ej: Aula 301">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" id="btn-add-item" class="btn btn-secondary">+ Agregar bloque</button>
+                        <button type="submit" class="btn btn-primary">Guardar Horario</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Horarios Guardados</h2>
+                <div id="schedules-list" class="items-list">
+                    <p class="empty-msg">No hay horarios guardados aún.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
