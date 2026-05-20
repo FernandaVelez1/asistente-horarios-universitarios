@@ -1,175 +1,300 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Horarios Universitarios</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistente de Horarios Universitarios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <h1>Asistente de Horarios Universitarios</h1>
-            <p>Sistema inteligente de recomendaciones de horarios</p>
+
+  <!-- CABECERA -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-mark"></span>
+          <span class="logo-text">Asistente Universitario</span>
         </div>
-    </header>
-
-    <main>
-        <nav class="tabs">
-            <button class="tab-btn active" data-tab="courses">Materias</button>
-            <button class="tab-btn" data-tab="recommend">Recomendaciones</button>
-            <button class="tab-btn" data-tab="schedules">Mis Horarios</button>
+        <nav class="header-nav">
+          <a href="#formulario">Ingresar datos</a>
+          <a href="#resultados">Resultados</a>
         </nav>
+      </div>
+    </div>
+  </header>
 
-        <!-- Courses Tab -->
-        <section id="tab-courses" class="tab-content active">
-            <div class="card">
-                <h2>Agregar Materia</h2>
-                <form id="course-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="course-name">Nombre de la materia *</label>
-                            <input type="text" id="course-name" placeholder="Ej: Cálculo I" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="course-code">Código</label>
-                            <input type="text" id="course-code" placeholder="Ej: MAT101">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="course-professor">Profesor</label>
-                            <input type="text" id="course-professor" placeholder="Ej: Dr. García">
-                        </div>
-                        <div class="form-group">
-                            <label for="course-credits">Créditos</label>
-                            <input type="number" id="course-credits" value="3" min="1" max="10">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Agregar Materia</button>
-                </form>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <p class="hero-label">Sistema de recomendacion academica</p>
+        <h1 class="hero-title">Organiza tu semestre.<br />Cuida tu bienestar.</h1>
+        <p class="hero-desc">
+          Ingresa tus materias, habitos de sueno y nivel de estres.
+          El sistema generara un plan de estudio personalizado con alertas
+          de sobrecarga y recomendaciones de descanso.
+        </p>
+        <a href="#formulario" class="btn-primary">Comenzar analisis</a>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="visual-card vc1">
+          <span class="vc-label">Carga academica</span>
+          <div class="vc-bar-group">
+            <div class="vc-bar" style="height: 60%"></div>
+            <div class="vc-bar" style="height: 80%"></div>
+            <div class="vc-bar" style="height: 45%"></div>
+            <div class="vc-bar" style="height: 90%"></div>
+            <div class="vc-bar" style="height: 65%"></div>
+          </div>
+        </div>
+        <div class="visual-card vc2">
+          <span class="vc-label">Horas de sueno</span>
+          <span class="vc-big">7.5h</span>
+          <span class="vc-sub">Optimo recomendado</span>
+        </div>
+        <div class="visual-card vc3">
+          <span class="vc-label">Estado general</span>
+          <span class="vc-status ok">Equilibrado</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMULARIO -->
+  <section class="form-section" id="formulario">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ingresa tu informacion</h2>
+        <p>Completa todos los campos para obtener recomendaciones precisas.</p>
+      </div>
+
+      <form action="/resultado" method="POST" class="main-form" id="main-form">
+
+        <!-- BLOQUE 1: MATERIAS -->
+        <div class="form-block">
+          <div class="block-title">
+            <span class="block-num">01</span>
+            <h3>Materias del semestre</h3>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="num_materias">Numero de materias</label>
+              <input type="number" id="num_materias" name="num_materias"
+                     min="1" max="12" placeholder="Ej. 6" required />
             </div>
-
-            <div class="card">
-                <h2>Materias Registradas</h2>
-                <div id="courses-list" class="items-list">
-                    <p class="empty-msg">No hay materias registradas aún.</p>
-                </div>
+            <div class="field">
+              <label for="dificultad">Dificultad promedio</label>
+              <select id="dificultad" name="dificultad" required>
+                <option value="" disabled selected>Selecciona una opcion</option>
+                <option value="baja">Baja — materias sencillas</option>
+                <option value="media">Media — requieren estudio regular</option>
+                <option value="alta">Alta — materias exigentes</option>
+                <option value="muy_alta">Muy alta — nivel avanzado</option>
+              </select>
             </div>
-        </section>
-
-        <!-- Recommend Tab -->
-        <section id="tab-recommend" class="tab-content">
-            <div class="card">
-                <h2>Generar Recomendaciones</h2>
-                <p class="subtitle">Selecciona las materias que deseas cursar y tus preferencias de horario.</p>
-
-                <div class="form-group">
-                    <label>Materias a cursar</label>
-                    <div id="recommend-courses" class="checkbox-list">
-                        <p class="empty-msg">Primero agrega materias en la pestaña "Materias".</p>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Preferencias de horario</label>
-                    <div class="preferences">
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="pref-avoid-early">
-                            Evitar clases muy temprano (antes de 8am)
-                        </label>
-                        <label class="checkbox-item">
-                            <input type="checkbox" id="pref-avoid-late">
-                            Evitar clases muy tarde (después de 7pm)
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Días preferidos</label>
-                    <div class="days-selector">
-                        <label class="day-chip"><input type="checkbox" value="Lunes"> Lunes</label>
-                        <label class="day-chip"><input type="checkbox" value="Martes"> Martes</label>
-                        <label class="day-chip"><input type="checkbox" value="Miércoles"> Miércoles</label>
-                        <label class="day-chip"><input type="checkbox" value="Jueves"> Jueves</label>
-                        <label class="day-chip"><input type="checkbox" value="Viernes"> Viernes</label>
-                    </div>
-                </div>
-
-                <button id="btn-recommend" class="btn btn-primary">Generar Recomendaciones</button>
+            <div class="field field-full">
+              <label for="materias_nombres">Nombres de tus materias</label>
+              <input type="text" id="materias_nombres" name="materias_nombres"
+                     placeholder="Ej. Calculo, Programacion, Fisica..." required />
+              <span class="field-hint">Separadas por comas</span>
             </div>
+          </div>
+        </div>
 
-            <div id="recommendations-result" class="card hidden">
-                <h2>Resultado</h2>
-                <div id="recommendations-content"></div>
+        <!-- BLOQUE 2: HABITOS -->
+        <div class="form-block">
+          <div class="block-title">
+            <span class="block-num">02</span>
+            <h3>Habitos diarios</h3>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="horas_sueno">Horas de sueno por noche</label>
+              <input type="number" id="horas_sueno" name="horas_sueno"
+                     min="2" max="12" step="0.5" placeholder="Ej. 7" required />
             </div>
-        </section>
-
-        <!-- Schedules Tab -->
-        <section id="tab-schedules" class="tab-content">
-            <div class="card">
-                <h2>Crear Horario</h2>
-                <form id="schedule-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="schedule-name">Nombre del horario *</label>
-                            <input type="text" id="schedule-name" placeholder="Ej: Horario Semestre 2026-1" required>
-                        </div>
-                    </div>
-
-                    <div id="schedule-items-container">
-                        <div class="schedule-item-entry" id="item-template-wrapper">
-                            <h4>Bloque de clase</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Materia</label>
-                                    <select class="item-course"></select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Día</label>
-                                    <select class="item-day">
-                                        <option>Lunes</option>
-                                        <option>Martes</option>
-                                        <option>Miércoles</option>
-                                        <option>Jueves</option>
-                                        <option>Viernes</option>
-                                        <option>Sábado</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Hora inicio</label>
-                                    <input type="time" class="item-start" value="08:00">
-                                </div>
-                                <div class="form-group">
-                                    <label>Hora fin</label>
-                                    <input type="time" class="item-end" value="10:00">
-                                </div>
-                                <div class="form-group">
-                                    <label>Salón</label>
-                                    <input type="text" class="item-location" placeholder="Ej: Aula 301">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="btn-group">
-                        <button type="button" id="btn-add-item" class="btn btn-secondary">+ Agregar bloque</button>
-                        <button type="submit" class="btn btn-primary">Guardar Horario</button>
-                    </div>
-                </form>
+            <div class="field">
+              <label for="horas_libres">Horas libres al dia</label>
+              <input type="number" id="horas_libres" name="horas_libres"
+                     min="0" max="16" step="0.5" placeholder="Ej. 4" required />
             </div>
-
-            <div class="card">
-                <h2>Horarios Guardados</h2>
-                <div id="schedules-list" class="items-list">
-                    <p class="empty-msg">No hay horarios guardados aún.</p>
-                </div>
+            <div class="field">
+              <label for="horas_clases">Horas de clases presenciales al dia</label>
+              <input type="number" id="horas_clases" name="horas_clases"
+                     min="0" max="12" step="0.5" placeholder="Ej. 5" required />
             </div>
-        </section>
-    </main>
+            <div class="field">
+              <label for="actividad_fisica">Actividad fisica semanal</label>
+              <select id="actividad_fisica" name="actividad_fisica" required>
+                <option value="" disabled selected>Selecciona una opcion</option>
+                <option value="ninguna">Ninguna</option>
+                <option value="poca">1 a 2 veces por semana</option>
+                <option value="moderada">3 a 4 veces por semana</option>
+                <option value="alta">5 o mas veces por semana</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-    <script src="/static/js/app.js"></script>
+        <!-- BLOQUE 3: BIENESTAR -->
+        <div class="form-block">
+          <div class="block-title">
+            <span class="block-num">03</span>
+            <h3>Bienestar y carga mental</h3>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="nivel_estres">Nivel de estres actual</label>
+              <select id="nivel_estres" name="nivel_estres" required>
+                <option value="" disabled selected>Selecciona una opcion</option>
+                <option value="bajo">Bajo — me siento tranquilo</option>
+                <option value="moderado">Moderado — algo de presion</option>
+                <option value="alto">Alto — estoy muy presionado</option>
+                <option value="critico">Critico — al limite</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="semanas_examen">Semanas para el proximo examen</label>
+              <input type="number" id="semanas_examen" name="semanas_examen"
+                     min="0" max="20" placeholder="Ej. 2" required />
+            </div>
+            <div class="field field-full">
+              <label for="materia_dificil">Materia que encuentras mas dificil</label>
+              <input type="text" id="materia_dificil" name="materia_dificil"
+                     placeholder="Ej. Calculo diferencial" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOQUE 4: PREFERENCIAS -->
+        <div class="form-block">
+          <div class="block-title">
+            <span class="block-num">04</span>
+            <h3>Preferencias de estudio</h3>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="horario_preferido">Horario de estudio preferido</label>
+              <select id="horario_preferido" name="horario_preferido" required>
+                <option value="" disabled selected>Selecciona una opcion</option>
+                <option value="manana">Manana (6am - 12pm)</option>
+                <option value="tarde">Tarde (12pm - 6pm)</option>
+                <option value="noche">Noche (6pm - 12am)</option>
+                <option value="madrugada">Madrugada (12am - 6am)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="metodo_estudio">Metodo de estudio habitual</label>
+              <select id="metodo_estudio" name="metodo_estudio" required>
+                <option value="" disabled selected>Selecciona una opcion</option>
+                <option value="solo">Estudio individual</option>
+                <option value="grupo">Estudio en grupo</option>
+                <option value="mixto">Mixto</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary btn-large" id="submit-btn">
+            Generar recomendaciones
+          </button>
+          <button type="reset" class="btn-ghost">Limpiar formulario</button>
+        </div>
+
+      </form>
+    </div>
+  </section>
+
+  <!-- RESULTADOS (solo aparece si Flask manda datos) -->
+  {% if resultado %}
+  <section class="results-section" id="resultados">
+    <div class="container">
+      <div class="section-header">
+        <h2>Tu plan personalizado</h2>
+        <p>Basado en la informacion que proporcionaste.</p>
+      </div>
+
+      <!-- TARJETA DE ALERTA (si hay sobrecarga) -->
+      {% if resultado.alerta %}
+      <div class="alert-card {{ resultado.alerta_tipo }}">
+        <div class="alert-icon"></div>
+        <div class="alert-body">
+          <strong>{{ resultado.alerta_titulo }}</strong>
+          <p>{{ resultado.alerta_mensaje }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- TARJETAS DE RESUMEN -->
+      <div class="results-grid">
+        <div class="result-card">
+          <span class="rc-label">Horas de estudio recomendadas</span>
+          <span class="rc-value">{{ resultado.horas_estudio }}h</span>
+          <span class="rc-sub">por dia</span>
+        </div>
+        <div class="result-card">
+          <span class="rc-label">Prioridad de descanso</span>
+          <span class="rc-value">{{ resultado.prioridad_descanso }}</span>
+          <span class="rc-sub">nivel</span>
+        </div>
+        <div class="result-card">
+          <span class="rc-label">Carga academica</span>
+          <span class="rc-value">{{ resultado.carga }}</span>
+          <span class="rc-sub">evaluacion general</span>
+        </div>
+      </div>
+
+      <!-- RECOMENDACIONES -->
+      <div class="recommendations">
+        <h3>Recomendaciones especificas</h3>
+        <ul class="rec-list">
+          {% for rec in resultado.recomendaciones %}
+          <li class="rec-item">
+            <span class="rec-dot"></span>
+            <span>{{ rec }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <!-- HORARIO SUGERIDO -->
+      {% if resultado.horario %}
+      <div class="schedule-block">
+        <h3>Horario diario sugerido</h3>
+        <div class="schedule-grid">
+          {% for bloque in resultado.horario %}
+          <div class="schedule-item">
+            <span class="sched-time">{{ bloque.hora }}</span>
+            <span class="sched-act">{{ bloque.actividad }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="results-actions">
+        <a href="#formulario" class="btn-ghost">Volver a ingresar datos</a>
+      </div>
+
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <span class="logo-text">Asistente Universitario</span>
+        <p class="footer-copy">Proyecto academico — Programacion Logica y Funcional</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
