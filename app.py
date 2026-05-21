@@ -1,111 +1,215 @@
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-from models import db, Course, Schedule, ScheduleItem
-import os
+# ============================================================
+# APP.PY — Servidor principal Flask
+# Asistente Inteligente de Horarios Universitarios
+#
+# Este archivo:
+#   1. Recibe los datos del formulario HTML
+#   2. Llama a logica.py (paradigma logico / Prolog)
+#   3. Llama a funcional.py (paradigma funcional / Lisp)
+#   4. Combina los resultados
+#   5. Los manda de regreso al HTML para mostrarlos
+# ============================================================
+
+from flask import Flask, render_template, request
+from logica import (
+    evaluar_sobrecarga,
+    horas_estudio_recomendadas,
+    calidad_sueno,
+    mejor_horario_estudio,
+    prioridad_descanso,
+    evaluar_carga_general,
+)
+from funcional import (
+    calcular_horas_estudio,
+    evaluar_riesgo,
+    generar_recomendaciones,
+    calcular_puntaje_bienestar,
+    generar_horario_dia,
+    detectar_condiciones,
+    DIFICULTAD_A_NUM,
+    ESTRES_A_NUM,
+    ACTIVIDAD_A_NUM,
+)
 
 app = Flask(__name__)
-CORS(app)
 
-database_url = os.environ.get('DATABASE_URL', 'sqlite:///schedules.db')
-if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-db.init_app(app)
+# ------------------------------------------------------------
+# RUTA PRINCIPAL: muestra el formulario
+# ------------------------------------------------------------
 
-with app.app_context():
-    db.create_all()
 
-@app.route('/')
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html", resultado=None)
 
-@app.route('/api/courses', methods=['GET'])
-def get_courses():
-    courses = Course.query.all()
-    return jsonify([c.to_dict() for c in courses])
 
-@app.route('/api/courses', methods=['POST'])
-def create_course():
-    data = request.get_json()
-    course = Course(
-        name=data['name'],
-        code=data.get('code', ''),
-        professor=data.get('professor', ''),
-        credits=data.get('credits', 3)
-    )
-    db.session.add(course)
-    db.session.commit()
-    return jsonify(course.to_dict()), 201
+# ------------------------------------------------------------
+# RUTA DE RESULTADO: procesa el formulario y genera respuesta
+# ------------------------------------------------------------
 
-@app.route('/api/courses/<int:course_id>', methods=['DELETE'])
-def delete_course(course_id):
-    course = Course.query.get_or_404(course_id)
-    db.session.delete(course)
-    db.session.commit()
-    return jsonify({'message': 'Course deleted'})
 
-@app.route('/api/schedules', methods=['GET'])
-def get_schedules():
-    schedules = Schedule.query.all()
-    return jsonify([s.to_dict() for s in schedules])
-
-@app.route('/api/schedules', methods=['POST'])
-def create_schedule():
-    data = request.get_json()
-    schedule = Schedule(name=data['name'])
-    db.session.add(schedule)
-    db.session.flush()
-
-    for item_data in data.get('items', []):
-        item = ScheduleItem(
-            schedule_id=schedule.id,
-            course_id=item_data['course_id'],
-            day=item_data['day'],
-            start_time=item_data['start_time'],
-            end_time=item_data['end_time'],
-            location=item_data.get('location', '')
+@app.route("/resultado", methods=["POST"])
+def resultado():
+    # --------------------------------------------------------
+    # PASO 1: Leer todos los datos que mando el formulario
+    # --------------------------------------------------------
+    try:
+        num_materias = int(request.form.get("num_materias", 0))
+        dificultad = request.form.get("dificultad", "media")
+        materias_nombres = request.form.get("materias_nombres", "")
+        horas_sueno = float(request.form.get("horas_sueno", 7))
+        horas_libres = float(request.form.get("horas_libres", 4))
+        horas_clases = float(request.form.get("horas_clases", 5))
+        actividad_fisica = request.form.get("actividad_fisica", "poca")
+        nivel_estres = request.form.get("nivel_estres", "moderado")
+        semanas_examen = int(request.form.get("semanas_examen", 4))
+        materia_dificil = request.form.get("materia_dificil", "")
+        horario_preferido = request.form.get("horario_preferido", "tarde")
+        metodo_estudio = request.form.get("metodo_estudio", "solo")
+    except (ValueError, TypeError):
+        # Si algo falla al leer los datos, mostrar pagina limpia
+        return render_template(
+            "index.html",
+            resultado=None,
+            error="Hubo un error al leer los datos. Intenta de nuevo.",
         )
-        db.session.add(item)
 
-    db.session.commit()
-    return jsonify(schedule.to_dict()), 201
+    # --------------------------------------------------------
+    # PASO 2: Convertir texto a numero para las funciones
+    # --------------------------------------------------------
+    dificultad_num = DIFICULTAD_A_NUM.get(dificultad, 2)
+    estres_num = ESTRES_A_NUM.get(nivel_estres, 2)
+    actividad_num = ACTIVIDAD_A_NUM.get(actividad_fisica, 1)
+    tiene_actividad = actividad_num >= 2
 
-@app.route('/api/schedules/<int:schedule_id>', methods=['DELETE'])
-def delete_schedule(schedule_id):
-    schedule = Schedule.query.get_or_404(schedule_id)
-    db.session.delete(schedule)
-    db.session.commit()
-    return jsonify({'message': 'Schedule deleted'})
+    # --------------------------------------------------------
+    # PASO 3: Llamar a las funciones de LOGICA (Prolog/Python)
+    # --------------------------------------------------------
 
-@app.route('/api/recommend', methods=['POST'])
-def recommend():
-    data = request.get_json()
-    selected_course_ids = data.get('course_ids', [])
-    preferences = data.get('preferences', {})
+    # 3a. Detectar si hay sobrecarga
+    hay_sobrecarga, msg_sobrecarga = evaluar_sobrecarga(
+        num_materias, dificultad, horas_sueno, nivel_estres
+    )
 
-    courses = Course.query.filter(Course.id.in_(selected_course_ids)).all()
+    # 3b. Horas de estudio (version logica)
+    horas_logica = horas_estudio_recomendadas(dificultad, horas_libres)
 
-    days_order = {'Lunes': 0, 'Martes': 1, 'Miércoles': 2, 'Jueves': 3, 'Viernes': 4}
-    avoid_early = preferences.get('avoid_early', False)
-    avoid_late = preferences.get('avoid_late', False)
-    preferred_days = preferences.get('preferred_days', [])
+    # 3c. Calidad del sueño
+    calidad = calidad_sueno(horas_sueno)
 
-    recommendations = []
-    for course in courses:
-        rec = {
-            'course': course.to_dict(),
-            'suggestion': f'Materia {course.name} ({course.credits} créditos) lista para asignar horario.'
-        }
-        recommendations.append(rec)
+    # 3d. Recomendacion de horario
+    rec_horario = mejor_horario_estudio(horario_preferido)
 
-    return jsonify({
-        'recommendations': recommendations,
-        'total_credits': sum(c.credits for c in courses),
-        'message': f'Se generaron recomendaciones para {len(courses)} materias.'
-    })
+    # 3e. Prioridad de descanso
+    prioridad = prioridad_descanso(nivel_estres, horas_sueno)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 3f. Evaluacion de carga general
+    carga_general = evaluar_carga_general(
+        num_materias, dificultad, horas_sueno, nivel_estres, semanas_examen
+    )
+
+    # --------------------------------------------------------
+    # PASO 4: Llamar a las funciones FUNCIONALES (Lisp/Python)
+    # --------------------------------------------------------
+
+    # 4a. Horas de estudio (version funcional — promedio con la logica)
+    horas_funcional = calcular_horas_estudio(dificultad_num, horas_libres)
+    horas_finales = round((horas_logica + horas_funcional) / 2, 1)
+
+    # 4b. Nivel de riesgo funcional
+    nivel_riesgo = evaluar_riesgo(estres_num, horas_sueno, num_materias)
+
+    # 4c. Puntaje de bienestar
+    puntaje_bienestar = calcular_puntaje_bienestar(
+        horas_sueno, horas_libres, actividad_num
+    )
+
+    # 4d. Horario sugerido del dia
+    horario_dia = generar_horario_dia(horario_preferido, horas_finales, tiene_actividad)
+
+    # 4e. Detectar condiciones y generar recomendaciones con map()
+    datos_para_condiciones = {
+        "horas_sueno": horas_sueno,
+        "estres_num": estres_num,
+        "num_materias": num_materias,
+        "dificultad_num": dificultad_num,
+        "actividad_num": actividad_num,
+        "semanas_examen": semanas_examen,
+        "carga": carga_general,
+    }
+    condiciones_detectadas = detectar_condiciones(datos_para_condiciones)
+    recomendaciones = generar_recomendaciones(condiciones_detectadas)
+
+    # Agregar la recomendacion de horario al inicio de la lista
+    recomendaciones.insert(0, rec_horario)
+
+    # Agregar recomendacion sobre meteria mas dificil si aplica
+    if materia_dificil and dificultad_num >= 3:
+        recomendaciones.append(
+            "Dedica sesiones específicas a {}: divide el tema en partes pequeñas.".format(
+                materia_dificil
+            )
+        )
+
+    # --------------------------------------------------------
+    # PASO 5: Determinar si hay alerta y de que tipo
+    # --------------------------------------------------------
+
+    alerta = (
+        hay_sobrecarga or nivel_riesgo in ("CRITICO", "ALTO") or puntaje_bienestar < 30
+    )
+
+    if nivel_riesgo == "CRITICO" or carga_general == "Critica":
+        alerta_tipo = "critico"
+        alerta_titulo = "Situacion de riesgo detectada"
+        alerta_mensaje = (
+            msg_sobrecarga
+            if msg_sobrecarga
+            else "Tu combinación actual de carga, sueño y estrés es peligrosa. Considera reducir actividades."
+        )
+    elif nivel_riesgo == "ALTO" or carga_general == "Alta":
+        alerta_tipo = "advertencia"
+        alerta_titulo = "Carga academica elevada"
+        alerta_mensaje = "Tu situación actual requiere atención. Sigue las recomendaciones al pie de la letra."
+    else:
+        alerta_tipo = "positivo"
+        alerta_titulo = "Situacion bajo control"
+        alerta_mensaje = "Tu carga es manejable. Mantén tus hábitos y adelántate en las materias difíciles."
+
+    # --------------------------------------------------------
+    # PASO 6: Empaquetar todo en un diccionario y mandarlo al HTML
+    # --------------------------------------------------------
+
+    resultado = {
+        # Numeros principales
+        "horas_estudio": horas_finales,
+        "prioridad_descanso": prioridad,
+        "carga": carga_general,
+        "puntaje_bienestar": puntaje_bienestar,
+        "calidad_sueno": calidad,
+        "nivel_riesgo": nivel_riesgo,
+        # Alerta
+        "alerta": alerta,
+        "alerta_tipo": alerta_tipo,
+        "alerta_titulo": alerta_titulo,
+        "alerta_mensaje": alerta_mensaje,
+        # Listas
+        "recomendaciones": recomendaciones,
+        "horario": horario_dia,
+        # Datos originales (para mostrar en la pagina si se desea)
+        "materias_nombres": materias_nombres,
+        "materia_dificil": materia_dificil,
+    }
+
+    return render_template("index.html", resultado=resultado)
+
+
+# ------------------------------------------------------------
+# PUNTO DE ENTRADA — ejecutar el servidor
+# ------------------------------------------------------------
+
+if __name__ == "__main__":
+    # debug=True muestra errores detallados en el navegador
+    # Quitar debug=True cuando se suba a produccion
+    app.run(debug=True, host="0.0.0.0", port=5000)
